@@ -75,7 +75,7 @@ def main():
     save_path_timestamped = work_dir / timestamped_filename
     save_path_latest = work_dir / "index.html"
 
-    # 5. HTMLコンテンツ（DL機能＆詳細余白調整版）
+    # 5. HTMLコンテンツ（PDF出力対応版）
     html_content = """<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -83,8 +83,9 @@ def main():
   <title>OMAKASE メニュー作成ツール</title>
   <!-- Mammoth.js for Word (.docx) import -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
-  <!-- html2canvas for Image Download -->
+  <!-- html2canvas & jsPDF for PDF Download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,7 +139,7 @@ def main():
     .btn-download {
       width: 100%;
       padding: 12px;
-      background-color: #27ae60;
+      background-color: #2980b9;
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -147,7 +148,7 @@ def main():
       cursor: pointer;
       transition: background 0.2s;
     }
-    .btn-download:hover { background-color: #219653; }
+    .btn-download:hover { background-color: #1f618d; }
 
     .file-input-wrapper {
       margin-top: 6px;
@@ -265,7 +266,7 @@ def main():
 
     <!-- Download Button -->
     <div class="section">
-      <button id="btnDownload" class="btn-download">画像をダウンロード (.png)</button>
+      <button id="btnDownloadPDF" class="btn-download">PDFをダウンロード (.pdf)</button>
     </div>
 
     <!-- Word Import -->
@@ -502,14 +503,21 @@ Dessert | A sweet finale on your Omakase journey</textarea>
       reader.readAsArrayBuffer(file);
     });
 
-    // Image Download Function
-    document.getElementById('btnDownload').addEventListener('click', function() {
+    // PDF Download Function
+    document.getElementById('btnDownloadPDF').addEventListener('click', function() {
       const target = document.getElementById('paper');
-      html2canvas(target, { scale: 2 }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = 'omakase_menu.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+      const { jsPDF } = window.jspdf;
+
+      html2canvas(target, { scale: 3, useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        
+        // 縦横比を計算してPDF（A4風）を作成
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('omakase_menu.pdf');
       });
     });
 
