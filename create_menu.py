@@ -75,12 +75,12 @@ def main():
     save_path_timestamped = work_dir / timestamped_filename
     save_path_latest = work_dir / "index.html"
 
-    # 5. HTMLコンテンツ（お嬢様ご指定のOMAKASE Generator）
+    # 5. HTMLコンテンツ（日本語UI版 OMAKASE Generator）
     html_content = """<!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Centered & Left Aligned OMAKASE Menu Generator</title>
+  <title>OMAKASE メニュー作成ツール</title>
   <!-- Mammoth.js for Word (.docx) import -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
   <!-- Google Fonts -->
@@ -94,7 +94,7 @@ def main():
       margin: 0;
       display: flex;
       height: 100vh;
-      font-family: sans-serif;
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
       background-color: #e5e5e5;
     }
 
@@ -121,7 +121,6 @@ def main():
       font-weight: 600;
       color: #555;
       margin-top: 8px;
-      text-transform: uppercase;
     }
     input[type="text"], textarea, select {
       width: 100%;
@@ -245,11 +244,11 @@ def main():
 
   <!-- Controls Panel -->
   <div class="controls">
-    <h2>Menu Generator Control</h2>
+    <h2>メニュー生成 コントロール</h2>
 
     <!-- Word Import -->
     <div class="section">
-      <h3>1. Import Word File (.docx)</h3>
+      <h3>1. Wordファイル取り込み (.docx)</h3>
       <div class="file-input-wrapper">
         <input type="file" id="wordFile" accept=".docx" />
       </div>
@@ -257,44 +256,44 @@ def main():
 
     <!-- Alignment & Style -->
     <div class="section">
-      <h3>2. Alignment & Style</h3>
-      <label>Text Alignment Option</label>
+      <h3>2. 配置 & スタイル設定</h3>
+      <label>テキスト配置（揃え方）</label>
       <div class="btn-group">
-        <button id="btnCenter" class="active">Centered</button>
-        <button id="btnLeft">Left Aligned</button>
+        <button id="btnCenter" class="active">中央揃え</button>
+        <button id="btnLeft">左揃え</button>
       </div>
 
-      <label>Font Family</label>
+      <label>フォント（書体）</label>
       <select id="fontSelect">
-        <option value="'Montserrat', sans-serif">Montserrat (Modern Clean)</option>
-        <option value="'Cormorant Garamond', serif">Cormorant Garamond (Serif)</option>
-        <option value="'Playfair Display', serif">Playfair Display (Elegant)</option>
+        <option value="'Montserrat', sans-serif">Montserrat (モダン・クリーン)</option>
+        <option value="'Cormorant Garamond', serif">Cormorant Garamond (明朝・クラシック)</option>
+        <option value="'Playfair Display', serif">Playfair Display (エレガント)</option>
       </select>
 
-      <label>Background Color</label>
+      <label>背景色</label>
       <select id="bgSelect">
-        <option value="#dcd3c4">Warm Greige</option>
-        <option value="#f5f2eb">Off-White / Cream</option>
-        <option value="#ffffff">Pure White</option>
+        <option value="#dcd3c4">ウォームグレージュ</option>
+        <option value="#f5f2eb">オフホワイト / クリーム</option>
+        <option value="#ffffff">ピュアホワイト</option>
       </select>
     </div>
 
     <!-- Title Settings -->
     <div class="section">
-      <h3>3. Course Title</h3>
+      <h3>3. コースタイトル</h3>
       <input type="text" id="inputTitle" value="SPECIAL OMAKASE COURSE">
       
-      <label>Title Size <span id="titleSizeVal">18px</span></label>
+      <label>タイトル文字サイズ <span id="titleSizeVal">18px</span></label>
       <input type="range" id="titleSize" min="14" max="28" value="18">
 
-      <label>Title Spacing <span id="titleSpaceVal">3px</span></label>
+      <label>タイトル文字間隔 <span id="titleSpaceVal">3px</span></label>
       <input type="range" id="titleSpace" min="0" max="10" value="3">
     </div>
 
     <!-- Content Settings -->
     <div class="section">
-      <h3>4. Menu Items</h3>
-      <p style="font-size: 11px; color: #777; margin: 2px 0 6px 0;">Format: Category | Description</p>
+      <h3>4. メニュー項目</h3>
+      <p style="font-size: 11px; color: #777; margin: 2px 0 6px 0;">入力形式： カテゴリ名 | お料理の説明（英語）</p>
       <textarea id="inputMenu">Starter | A delicate tofu skin topped with succulent sea urchin
 Appetizer | Cod fish milt in Butteryaki, Hotaru Ika and braised sea snail
 Seasonal Soup | Fresh Wakame, Bamboo shoot, Cheese Tofu and Sword Fish
@@ -309,17 +308,17 @@ Dessert | A sweet finale on your Omakase journey</textarea>
 
     <!-- Typography Fine Tuning -->
     <div class="section">
-      <h3>5. Spacing & Size</h3>
-      <label>Vertical Item Gap <span id="gapVal">16px</span></label>
+      <h3>5. 余白 & 文字サイズの調整</h3>
+      <label>メニュー項目の上下間隔 <span id="gapVal">16px</span></label>
       <input type="range" id="gapRange" min="8" max="32" value="16">
 
-      <label>Category Size <span id="catSizeVal">14px</span></label>
+      <label>カテゴリ文字サイズ <span id="catSizeVal">14px</span></label>
       <input type="range" id="catSize" min="10" max="20" value="14">
 
-      <label>Description Size <span id="descSizeVal">12px</span></label>
+      <label>説明文の文字サイズ <span id="descSizeVal">12px</span></label>
       <input type="range" id="descSize" min="8" max="18" value="12">
 
-      <label>Letter Spacing <span id="descSpaceVal">0.5px</span></label>
+      <label>説明文の文字間隔 <span id="descSpaceVal">0.5px</span></label>
       <input type="range" id="descSpace" min="-0.5" max="4" step="0.5" value="0.5">
     </div>
   </div>
