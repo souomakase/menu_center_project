@@ -75,7 +75,7 @@ def main():
     save_path_timestamped = work_dir / timestamped_filename
     save_path_latest = work_dir / "index.html"
 
-    # 5. HTMLコンテンツ（PDF出力対応版）
+    # 5. HTMLコンテンツ（PDF背景無色・透過対応版）
     html_content = """<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -293,7 +293,7 @@ def main():
         <option value="'Playfair Display', serif">Playfair Display (エレガント)</option>
       </select>
 
-      <label>背景色</label>
+      <label>画面プレビュー用 背景色</label>
       <select id="bgSelect">
         <option value="#dcd3c4">ウォームグレージュ</option>
         <option value="#f5f2eb">オフホワイト / クリーム</option>
@@ -503,15 +503,29 @@ Dessert | A sweet finale on your Omakase journey</textarea>
       reader.readAsArrayBuffer(file);
     });
 
-    // PDF Download Function
+    // Transparent PDF Download Function
     document.getElementById('btnDownloadPDF').addEventListener('click', function() {
       const target = document.getElementById('paper');
+      const originalBg = target.style.backgroundColor;
+      const originalShadow = target.style.boxShadow;
+
+      // 一時的に背景色と影を解除（透明化）
+      target.style.backgroundColor = 'transparent';
+      target.style.boxShadow = 'none';
+
       const { jsPDF } = window.jspdf;
 
-      html2canvas(target, { scale: 3, useCORS: true }).then(canvas => {
+      html2canvas(target, { 
+        scale: 3, 
+        useCORS: true,
+        backgroundColor: null // キャプチャ時も背景無色（透明）に設定
+      }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         
-        // 縦横比を計算してPDF（A4風）を作成
+        // 元の背景スタイルに戻す
+        target.style.backgroundColor = originalBg;
+        target.style.boxShadow = originalShadow;
+
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
