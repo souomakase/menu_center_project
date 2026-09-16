@@ -75,7 +75,7 @@ def main():
     save_path_timestamped = work_dir / timestamped_filename
     save_path_latest = work_dir / "index.html"
 
-    # 5. HTMLコンテンツ（日本語UI版 OMAKASE Generator）
+    # 5. HTMLコンテンツ（DL機能＆詳細余白調整版）
     html_content = """<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -83,6 +83,8 @@ def main():
   <title>OMAKASE メニュー作成ツール</title>
   <!-- Mammoth.js for Word (.docx) import -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+  <!-- html2canvas for Image Download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -130,9 +132,23 @@ def main():
       border-radius: 4px;
       font-size: 13px;
     }
-    textarea { height: 130px; resize: vertical; }
+    textarea { height: 110px; resize: vertical; }
     input[type="range"] { width: 100%; margin-top: 4px; }
     
+    .btn-download {
+      width: 100%;
+      padding: 12px;
+      background-color: #27ae60;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-download:hover { background-color: #219653; }
+
     .file-input-wrapper {
       margin-top: 6px;
       padding: 10px;
@@ -180,13 +196,13 @@ def main():
       height: 680px;
       background-color: #dcd3c4; /* Elegant greige */
       box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-      padding: 50px 45px;
+      padding: 0px 45px 50px 45px;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       font-family: 'Montserrat', sans-serif;
       color: #1a1a1a;
-      transition: all 0.3s;
+      transition: background-color 0.3s;
     }
 
     /* Alignment Classes */
@@ -205,6 +221,7 @@ def main():
       font-size: 18px;
       letter-spacing: 3px;
       text-transform: uppercase;
+      margin-top: 50px;
       margin-bottom: 25px;
     }
 
@@ -246,6 +263,11 @@ def main():
   <div class="controls">
     <h2>メニュー生成 コントロール</h2>
 
+    <!-- Download Button -->
+    <div class="section">
+      <button id="btnDownload" class="btn-download">画像をダウンロード (.png)</button>
+    </div>
+
     <!-- Word Import -->
     <div class="section">
       <h3>1. Wordファイル取り込み (.docx)</h3>
@@ -280,9 +302,15 @@ def main():
 
     <!-- Title Settings -->
     <div class="section">
-      <h3>3. コースタイトル</h3>
+      <h3>3. コースタイトル & 上下余白</h3>
       <input type="text" id="inputTitle" value="SPECIAL OMAKASE COURSE">
       
+      <label>タイトル上部の余白 <span id="titleTopVal">50px</span></label>
+      <input type="range" id="titleTop" min="10" max="100" value="50">
+
+      <label>タイトル下部の余白 <span id="titleBottomVal">25px</span></label>
+      <input type="range" id="titleBottom" min="10" max="80" value="25">
+
       <label>タイトル文字サイズ <span id="titleSizeVal">18px</span></label>
       <input type="range" id="titleSize" min="14" max="28" value="18">
 
@@ -293,7 +321,7 @@ def main():
     <!-- Content Settings -->
     <div class="section">
       <h3>4. メニュー項目</h3>
-      <p style="font-size: 11px; color: #777; margin: 2px 0 6px 0;">入力形式： カテゴリ名 | お料理の説明（英語）</p>
+      <p style="font-size: 11px; color: #777; margin: 2px 0 6px 0;">入力形式： カテゴリ名 | お料理の説明</p>
       <textarea id="inputMenu">Starter | A delicate tofu skin topped with succulent sea urchin
 Appetizer | Cod fish milt in Butteryaki, Hotaru Ika and braised sea snail
 Seasonal Soup | Fresh Wakame, Bamboo shoot, Cheese Tofu and Sword Fish
@@ -308,9 +336,9 @@ Dessert | A sweet finale on your Omakase journey</textarea>
 
     <!-- Typography Fine Tuning -->
     <div class="section">
-      <h3>5. 余白 & 文字サイズの調整</h3>
+      <h3>5. メニュー項目の間隔 & 文字サイズ</h3>
       <label>メニュー項目の上下間隔 <span id="gapVal">16px</span></label>
-      <input type="range" id="gapRange" min="8" max="32" value="16">
+      <input type="range" id="gapRange" min="8" max="60" value="16">
 
       <label>カテゴリ文字サイズ <span id="catSizeVal">14px</span></label>
       <input type="range" id="catSize" min="10" max="20" value="14">
@@ -342,6 +370,8 @@ Dessert | A sweet finale on your Omakase journey</textarea>
     const courseList = document.getElementById('courseList');
 
     const inputTitle = document.getElementById('inputTitle');
+    const titleTop = document.getElementById('titleTop');
+    const titleBottom = document.getElementById('titleBottom');
     const titleSize = document.getElementById('titleSize');
     const titleSpace = document.getElementById('titleSpace');
     const previewTitle = document.getElementById('previewTitle');
@@ -363,9 +393,18 @@ Dessert | A sweet finale on your Omakase journey</textarea>
       paper.className = 'paper align-left';
     });
 
-    // Styles
+    // Styles & Margins
     fontSelect.addEventListener('change', () => paper.style.fontFamily = fontSelect.value);
     bgSelect.addEventListener('change', () => paper.style.backgroundColor = bgSelect.value);
+
+    titleTop.addEventListener('input', (e) => {
+      previewTitle.style.marginTop = e.target.value + 'px';
+      document.getElementById('titleTopVal').textContent = e.target.value + 'px';
+    });
+    titleBottom.addEventListener('input', (e) => {
+      previewTitle.style.marginBottom = e.target.value + 'px';
+      document.getElementById('titleBottomVal').textContent = e.target.value + 'px';
+    });
 
     gapRange.addEventListener('input', (e) => {
       courseList.style.gap = e.target.value + 'px';
@@ -436,23 +475,42 @@ Dessert | A sweet finale on your Omakase journey</textarea>
       reader.onload = function(event) {
         mammoth.extractRawText({ arrayBuffer: event.target.result })
           .then(function(result) {
-            const lines = result.value.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+            const rawLines = result.value.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
             let output = [];
-            for (let i = 0; i < lines.length; i++) {
-              if (lines[i].includes('|')) {
-                output.push(lines[i]);
-              } else if (i + 1 < lines.length && lines[i].length < 30 && lines[i+1].length >= 30) {
-                output.push(`${lines[i]} | ${lines[i+1]}`);
-                i++;
-              } else {
-                output.push(lines[i]);
+
+            for (let i = 0; i < rawLines.length; i++) {
+              let line = rawLines[i];
+              if (line.includes('|')) {
+                output.push(line);
+                continue;
               }
+              if (i + 1 < rawLines.length) {
+                const nextLine = rawLines[i + 1];
+                if (!nextLine.includes('|')) {
+                  output.push(`${line} | ${nextLine}`);
+                  i++;
+                  continue;
+                }
+              }
+              output.push(line);
             }
+
             inputMenu.value = output.join('\\n');
             renderMenu();
           });
       };
       reader.readAsArrayBuffer(file);
+    });
+
+    // Image Download Function
+    document.getElementById('btnDownload').addEventListener('click', function() {
+      const target = document.getElementById('paper');
+      html2canvas(target, { scale: 2 }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'omakase_menu.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
     });
 
     renderMenu();
@@ -463,14 +521,12 @@ Dessert | A sweet finale on your Omakase journey</textarea>
 
     # 6. 書き込み処理
     try:
-        # タイムスタンプ付き保存
         with open(save_path_timestamped, "w", encoding="utf-8") as f:
             f.write(html_content)
         logger.info(
             f"タイムスタンプ付きHTMLを出力いたしました: {save_path_timestamped.name}"
         )
 
-        # 最新版 (index.html) の保存
         with open(save_path_latest, "w", encoding="utf-8") as f:
             f.write(html_content)
         logger.info(f"最新版HTMLを出力いたしました: {save_path_latest.name}")
